@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外星通讯工具 - Alien Communicator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+        
+        .view {
+            display: none;
+        }
+        
+        .view.active {
+            display: block;
+        }
+        
+        .symbol {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            margin: 2px;
+            background-color: #4a5568;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .symbol-group {
+            display: inline-flex;
+            margin: 0 5px;
+        }
+        
+        .chat-message {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item:hover {
+            background-color: rgba(99, 102, 241, 0.2);
+        }
+        
+        .nav-item.active {
+            background-color: rgba(99, 102, 241, 0.3);
+            border-left: 3px solid #63b3ed;
+        }
+        
+        .symbol-preview {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            margin: 0 2px;
+            background-color: #4a5568;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">外星通讯工具</h1>
+            <p class="text-gray-400">使用符号序列与外星文明进行通讯</p>
+        </header>
+
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- 侧边导航 -->
+            <nav class="w-full md:w-64 flex-shrink-0">
+                <div class="card rounded-xl p-4 mb-6">
+                    <h2 class="text-lg font-semibold mb-4 text-blue-300">导航菜单</h2>
+                    <ul>
+                        <li>
+                            <a href="#" onclick="showView('dashboard')" class="nav-item block py-3 px-4 rounded-lg mb-2">
+                                <i class="fas fa-home mr-3"></i> 仪表盘
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="showView('vocabulary')" class="nav-item block py-3 px-4 rounded-lg mb-2">
+                                <i class="fas fa-book mr-3"></i> 词汇表管理
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="showView('contacts')" class="nav-item block py-3 px-4 rounded-lg mb-2">
+                                <i class="fas fa-address-book mr-3"></i> 联系人管理
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="showView('communication')" class="nav-item block py-3 px-4 rounded-lg mb-2">
+                                <i class="fas fa-satellite-dish mr-3"></i> 通讯中心
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="showView('chat')" class="nav-item block py-3 px-4 rounded-lg mb-2">
+                                <i class="fas fa-comments mr-3"></i> 聊天记录
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="showView('notes')" class="nav-item block py-3 px-4 rounded-lg mb-2">
+                                <i class="fas fa-sticky-note mr-3"></i> 破解笔记
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="showView('help')" class="nav-item block py-3 px-4 rounded-lg mb-2">
+                                <i class="fas fa-question-circle mr-3"></i> 帮助文档
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card rounded-xl p-4">
+                    <h2 class="text-lg font-semibold mb-4 text-blue-300">当前状态</h2>
+                    <div class="mb-3">
+                        <p class="text-gray-400 text-sm">当前联系人</p>
+                        <p id="currentContactStatus" class="font-medium">未选择</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">词汇表数量</p>
+                        <p id="vocabularyCount" class="font-medium">0</p>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- 主内容区 -->
+            <main class="flex-grow">
+                <!-- 仪表盘视图 -->
+                <div id="dashboard" class="view active">
+                    <div class="card rounded-xl p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-6 text-blue-300">外星通讯工具仪表盘</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-gradient-to-br from-blue-900 to-indigo-900 rounded-xl p-5 shadow-lg">
+                                <div class="flex items-center">
+                                    <div class="rounded-full bg-blue-800 p-3 mr-4">
+                                        <i class="fas fa-book text-blue-300 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-300">词汇表数量</p>
+                                        <p id="dashboardVocabCount" class="text-2xl font-bold">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-purple-900 to-pink-900 rounded-xl p-5 shadow-lg">
+                                <div class="flex items-center">
+                                    <div class="rounded-full bg-purple-800 p-3 mr-4">
+                                        <i class="fas fa-address-book text-purple-300 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-300">联系人数量</p>
+                                        <p id="dashboardContactCount" class="text-2xl font-bold">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-green-900 to-teal-900 rounded-xl p-5 shadow-lg">
+                                <div class="flex items-center">
+                                    <div class="rounded-full bg-green-800 p-3 mr-4">
+                                        <i class="fas fa-comments text-green-300 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-300">聊天记录数</p>
+                                        <p id="dashboardChatCount" class="text-2xl font-bold">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-800 bg-opacity-50 rounded-xl p-5 mb-6">
+                            <h3 class="text-lg font-semibold mb-3 text-blue-300">快速操作</h3>
+                            <div class="flex flex-wrap gap-3">
+                                <button onclick="showView('vocabulary'); showAddVocabularyModal()" class="btn-primary text-white py-2 px-4 rounded-lg">
+                                    <i class="fas fa-plus mr-2"></i> 添加词汇
+                                </button>
+                                <button onclick="showView('contacts'); showAddContactModal()" class="btn-primary text-white py-2 px-4 rounded-lg">
+                                    <i class="fas fa-user-plus mr-2"></i> 添加联系人
+                                </button>
+                                <button onclick="showView('communication')" class="btn-primary text-white py-2 px-4 rounded-lg">
+                                    <i class="fas fa-paper-plane mr-2"></i> 发送消息
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-800 bg-opacity-50 rounded-xl p-5">
+                            <h3 class="text-lg font-semibold mb-3 text-blue-300">使用说明</h3>
+                            <ul class="list-disc pl-5 space-y-2 text-gray-300">
+                                <li>首先在词汇表中添加你想要使用的词汇</li>
+                                <li>添加联系人并选择要通讯的对象</li>
+                                <li>在通讯中心发送消息（文本转符号）或接收消息（符号转文本）</li>
+                                <li>在破解笔记中记录你对对方符号的理解</li>
+                                <li>查看聊天记录，已破解的符号会显示为你理解的含义</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 词汇表管理视图 -->
+                <div id="vocabulary" class="view">
+                    <div class="card rounded-xl p-6 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-blue-300">词汇表管理</h2>
+                            <button onclick="showAddVocabularyModal()" class="btn-primary text-white py-2 px-4 rounded-lg">
+                                <i class="fas fa-plus mr-2"></i> 添加词汇
+                            </button>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="flex items-center">
+                                <input type="text" id="vocabularySearch" placeholder="搜索词汇..." class="flex-grow p-3 bg-gray-700 text-white rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button onclick="searchVocabulary()" class="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-r-lg">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-gray-800 bg-opacity-50">
+                                        <th class="py-3 px-4 text-left">词汇</th>
+                                        <th class="py-3 px-4 text-left">符号序列</th>
+                                        <th class="py-3 px-4 text-left">备注</th>
+                                        <th class="py-3 px-4 text-left">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vocabularyTableBody">
+                                    <!-- 词汇表数据将在这里动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="vocabularyEmptyMessage" class="text-center py-10 text-gray-500">
+                            <i class="fas fa-book-open text-4xl mb-3"></i>
+                            <p>词汇表为空，请添加词汇</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 联系人管理视图 -->
+                <div id="contacts" class="view">
+                    <div class="card rounded-xl p-6 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-blue-300">联系人管理</h2>
+                            <button onclick="showAddContactModal()" class="btn-primary text-white py-2 px-4 rounded-lg">
+                                <i class="fas fa-user-plus mr-2"></i> 添加联系人
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="contactsList">
+                            <!-- 联系人卡片将在这里动态生成 -->
+                        </div>
+                        
+                        <div id="contactsEmptyMessage" class="text-center py-10 text-gray-500">
+                            <i class="fas fa-address-book text-4xl mb-3"></i>
+                            <p>联系人列表为空，请添加联系人</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 通讯中心视图 -->
+                <div id="communication" class="view">
+                    <div class="card rounded-xl p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-6 text-blue-300">通讯中心</h2>
+                        
+                        <div class="mb-6 p-4 bg-gray-800 bg-opacity-50 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-gray-400">当前联系人</p>
+                                    <p id="currentContactName" class="text-xl font-semibold">未选择</p>
+                                </div>
+                                <button onclick="showContactSelectionModal()" class="btn-primary text-white py-2 px-4 rounded-lg">
+                                    <i class="fas fa-exchange-alt mr-2"></i> 选择联系人
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gray-800 bg-opacity-50 rounded-xl p-5">
+                                <h3 class="text-lg font-semibold mb-4 text-blue-300">发送消息</h3>
+                                <div class="mb-4">
+                                    <label class="block text-gray-400 mb-2">输入消息（用空格分隔词汇）</label>
+                                    <textarea id="messageInput" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" placeholder="例如：你好 外星朋友"></textarea>
+                                </div>
+                                <div id="messageError" class="hidden mb-4 p-3 bg-red-900 bg-opacity-30 rounded-lg text-red-300">
+                                    <i class="fas fa-exclamation-circle mr-2"></i>
+                                    <span id="messageErrorText"></span>
+                                </div>
+                                <button onclick="sendMessage()" class="btn-primary text-white py-2 px-4 rounded-lg w-full">
+                                    <i class="fas fa-paper-plane mr-2"></i> 发送消息
+                                </button>
+                                
+                                <div id="encryptedResult" class="hidden mt-6 p-4 bg-gray-700 rounded-lg">
+                                    <h4 class="font-semibold mb-2 text-blue-300">加密结果</h4>
+                                    <div class="flex items-center justify-between">
+                                        <div id="encryptedMessage" class="font-mono break-all"></div>
+                                        <button onclick="copyToClipboard('encryptedMessage')" class="text-blue-400 hover:text-blue-300 ml-2">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-800 bg-opacity-50 rounded-xl p-5">
+                                <h3 class="text-lg font-semibold mb-4 text-blue-300">接收消息</h3>
+                                <div class="mb-4">
+                                    <label class="block text-gray-400 mb-2">输入符号序列</label>
+                                    <textarea id="symbolInput" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" placeholder="例如：┳ ┻ ╋"></textarea>
+                                </div>
+                                <button onclick="receiveMessage()" class="btn-primary text-white py-2 px-4 rounded-lg w-full">
+                                    <i class="fas fa-satellite-dish mr-2"></i> 接收消息
+                                </button>
+                                
+                                <div id="decryptedResult" class="hidden mt-6 p-4 bg-gray-700 rounded-lg">
+                                    <h4 class="font-semibold mb-2 text-blue-300">解密结果</h4>
+                                    <div id="decryptedMessage" class="font-mono break-all"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 聊天记录视图 -->
+                <div id="chat" class="view">
+                    <div class="card rounded-xl p-6 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-blue-300">聊天记录</h2>
+                            <div>
+                                <select id="chatContactSelect" onchange="loadChatHistory()" class="p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">选择联系人</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="chatHistory" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                            <!-- 聊天记录将在这里动态生成 -->
+                        </div>
+                        
+                        <div id="chatEmptyMessage" class="text-center py-10 text-gray-500">
+                            <i class="fas fa-comments text-4xl mb-3"></i>
+                            <p>请选择联系人查看聊天记录</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 破解笔记视图 -->
+                <div id="notes" class="view">
+                    <div class="card rounded-xl p-6 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-blue-300">破解笔记</h2>
+                            <button onclick="showAddNoteModal()" class="btn-primary text-white py-2 px-4 rounded-lg">
+                                <i class="fas fa-plus mr-2"></i> 添加笔记
+                            </button>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="flex items-center">
+                                <input type="text" id="notesSearch" placeholder="搜索笔记..." class="flex-grow p-3 bg-gray-700 text-white rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button onclick="searchNotes()" class="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-r-lg">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="notesList">
+                            <!-- 笔记卡片将在这里动态生成 -->
+                        </div>
+                        
+                        <div id="notesEmptyMessage" class="text-center py-10 text-gray-500">
+                            <i class="fas fa-sticky-note text-4xl mb-3"></i>
+                            <p>破解笔记为空，请添加笔记</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 帮助文档视图 -->
+                <div id="help" class="view">
+                    <div class="card rounded-xl p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-6 text-blue-300">帮助文档</h2>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3 text-blue-300">什么是外星通讯工具？</h3>
+                                <p class="text-gray-300">外星通讯工具是一个模拟与外星文明进行通讯的游戏工具。它使用符号序列来代表词汇，通过发送和接收符号序列来模拟跨文明通讯。</p>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3 text-blue-300">如何使用？</h3>
+                                <ol class="list-decimal pl-5 space-y-2 text-gray-300">
+                                    <li>在词汇表管理中添加你想要使用的词汇</li>
+                                    <li>在联系人管理中添加联系人并选择要通讯的对象</li>
+                                    <li>在通讯中心发送消息（文本转符号）或接收消息（符号转文本）</li>
+                                    <li>在破解笔记中记录你对对方符号的理解</li>
+                                    <li>查看聊天记录，已破解的符号会显示为你理解的含义</li>
+                                </ol>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3 text-blue-300">符号系统说明</h3>
+                                <p class="text-gray-300 mb-3">本工具使用16个基本符号，每个符号代表特定的含义。符号表示如下：</p>
+                                <div class="flex flex-wrap gap-3 mb-3">
+                                    <div class="flex items-center">
+                                        <div class="symbol">┳</div>
+                                        <span class="ml-2">┳</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">┻</div>
+                                        <span class="ml-2">┻</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">╋</div>
+                                        <span class="ml-2">╋</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">▂</div>
+                                        <span class="ml-2">▂</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">▄</div>
+                                        <span class="ml-2">▄</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">█</div>
+                                        <span class="ml-2">█</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">◢</div>
+                                        <span class="ml-2">◢</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">◣</div>
+                                        <span class="ml-2">◣</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">◤</div>
+                                        <span class="ml-2">◤</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">◥</div>
+                                        <span class="ml-2">◥</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">▪</div>
+                                        <span class="ml-2">▪</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">▫</div>
+                                        <span class="ml-2">▫</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">▲</div>
+                                        <span class="ml-2">▲</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">△</div>
+                                        <span class="ml-2">△</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">○</div>
+                                        <span class="ml-2">○</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="symbol">●</div>
+                                        <span class="ml-2">●</span>
+                                    </div>
+                                </div>
+                                <p class="text-gray-300">每个词汇对应一个唯一的符号序列，由3个符号组成。例如："你好"可能对应"┳ ┻ ╋"。</p>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3 text-blue-300">破解笔记的作用</h3>
+                                <p class="text-gray-300">当你接收到来自外星文明的符号序列时，你可能不知道这些符号代表什么含义。破解笔记允许你记录你对这些符号的理解。当你再次接收到相同的符号序列时，系统会自动显示你记录的含义。</p>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3 text-blue-300">常见问题</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <h4 class="font-medium text-blue-200">Q: 词汇表有数量限制吗？</h4>
+                                        <p class="text-gray-300">A: 是的，由于符号系统的限制，词汇表最多可以包含4096个词汇（16的3次方）。</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-blue-200">Q: 如何删除词汇或联系人？</h4>
+                                        <p class="text-gray-300">A: 在词汇表管理或联系人管理页面，每个项目旁边都有删除按钮。</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-blue-200">Q: 数据会保存在哪里？</h4>
+                                        <p class="text-gray-300">A: 所有数据都保存在浏览器的本地存储中，不会上传到服务器。清除浏览器数据会删除所有记录。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 添加词汇模态框 -->
+    <div id="addVocabularyModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">添加词汇</h3>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">词汇</label>
+                <input type="text" id="newVocabularyWord" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="输入词汇">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">备注</label>
+                <input type="text" id="newVocabularyNote" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="输入备注（可选）">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModal('addVocabularyModal')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">取消</button>
+                <button onclick="addVocabulary()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加联系人模态框 -->
+    <div id="addContactModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">添加联系人</h3>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">联系人名称</label>
+                <input type="text" id="newContactName" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="输入联系人名称">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">备注</label>
+                <input type="text" id="newContactNote" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="输入备注（可选）">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModal('addContactModal')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">取消</button>
+                <button onclick="addContact()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 选择联系人模态框 -->
+    <div id="contactSelectionModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">选择联系人</h3>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">联系人</label>
+                <select id="contactSelect" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">选择联系人</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModal('contactSelectionModal')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">取消</button>
+                <button onclick="selectContact()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">选择</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加笔记模态框 -->
+    <div id="addNoteModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">添加破解笔记</h3>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">符号序列</label>
+                <input type="text" id="newNoteSymbol" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="例如：┳ ┻ ╋">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">含义</label>
+                <input type="text" id="newNoteMeaning" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="输入符号的含义">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">备注</label>
+                <input type="text" id="newNoteNote" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="输入备注（可选）">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModal('addNoteModal')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">取消</button>
+                <button onclick="addNote()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑笔记模态框 -->
+    <div id="editNoteModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">编辑破解笔记</h3>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">符号序列</label>
+                <input type="text" id="editNoteSymbol" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">含义</label>
+                <input type="text" id="editNoteMeaning" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">备注</label>
+                <input type="text" id="editNoteNote" class="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModal('editNoteModal')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">取消</button>
+                <button onclick="updateNote()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">更新</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化数据
+        let vocabulary = JSON.parse(localStorage.getItem('vocabulary')) || [];
+        let contacts = JSON.parse(localStorage.getItem('contacts')) || [];
+        let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        let notes = JSON.parse(localStorage.getItem('notes')) || [];
+        let currentContactId = localStorage.getItem('currentContactId') || '';
+        let editingNoteId = '';
+
+        // 符号系统 - 更新为提供的16个符号
+        const symbols = ['┳', '┻', '╋', '▂', '▄', '█', '◢', '◣', '◤', '◥', '▪', '▫', '▲', '△', '○', '●'];
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDashboard();
+            updateVocabularyTable();
+            updateContactsList();
+            updateCurrentContactStatus();
+            updateChatContactSelect();
+            updateNotesList();
+            
+            // 设置默认视图
+            showView('dashboard');
+        });
+
+        // 视图切换
+        function showView(viewId) {
+            // 隐藏所有视图
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // 显示选中的视图
+            document.getElementById(viewId).classList.add('active');
+            
+            // 更新导航栏活动状态
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 查找对应的导航项并设置为活动状态
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                if (item.getAttribute('onclick').includes(viewId)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // 更新仪表盘
+        function updateDashboard() {
+            document.getElementById('dashboardVocabCount').textContent = vocabulary.length;
+            document.getElementById('dashboardContactCount').textContent = contacts.length;
+            
+            // 计算聊天记录总数
+            let totalChatCount = 0;
+            chatHistory.forEach(contact => {
+                totalChatCount += contact.messages.length;
+            });
+            document.getElementById('dashboardChatCount').textContent = totalChatCount;
+            
+            // 更新侧边栏状态
+            document.getElementById('vocabularyCount').textContent = vocabulary.length;
+        }
+
+        // 词汇表管理
+        function showAddVocabularyModal() {
+            document.getElementById('newVocabularyWord').value = '';
+            document.getElementById('newVocabularyNote').value = '';
+            document.getElementById('addVocabularyModal').classList.remove('hidden');
+            document.getElementById('addVocabularyModal').classList.add('flex');
+        }
+
+        function addVocabulary() {
+            const word = document.getElementById('newVocabularyWord').value.trim();
+            const note = document.getElementById('newVocabularyNote').value.trim();
+            
+            if (!word) {
+                alert('请输入词汇');
+                return;
+            }
+            
+            // 检查词汇是否已存在（忽略大小写）
+            const existingWord = vocabulary.find(item => item.word.toLowerCase() === word.toLowerCase());
+            if (existingWord) {
+                if (confirm(`词汇 "${word}" 已存在，是否继续添加？`)) {
+                    // 用户选择继续添加
+                } else {
+                    // 用户选择不添加
+                    closeModal('addVocabularyModal');
+                    return;
+                }
+            }
+            
+            // 生成符号序列
+            let symbolSequence = '';
+            for (let i = 0; i < 3; i++) {
+                const randomIndex = Math.floor(Math.random() * symbols.length);
+                symbolSequence += symbols[randomIndex] + ' ';
+            }
+            symbolSequence = symbolSequence.trim();
+            
+            // 添加到词汇表
+            vocabulary.push({
+                id: Date.now().toString(),
+                word: word,
+                symbol: symbolSequence,
+                note: note
+            });
+            
+            // 保存到本地存储
+            localStorage.setItem('vocabulary', JSON.stringify(vocabulary));
+            
+            // 更新UI
+            updateVocabularyTable();
+            updateDashboard();
+            closeModal('addVocabularyModal');
+        }
+
+        function updateVocabularyTable() {
+            const tableBody = document.getElementById('vocabularyTableBody');
+            const emptyMessage = document.getElementById('vocabularyEmptyMessage');
+            
+            tableBody.innerHTML = '';
+            
+            if (vocabulary.length === 0) {
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+            
+            emptyMessage.classList.add('hidden');
+            
+            vocabulary.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-700 hover:bg-gray-800 hover:bg-opacity-30';
+                
+                // 创建符号预览
+                let symbolPreview = '';
+                const symbolParts = item.symbol.split(' ');
+                symbolParts.forEach(part => {
+                    symbolPreview += `<div class="symbol-preview">${part}</div>`;
+                });
+                
+                row.innerHTML = `
+                    <td class="py-3 px-4">${item.word}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center">
+                            ${symbolPreview}
+                            <span class="ml-2 text-sm">${item.symbol}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">${item.note || '-'}</td>
+                    <td class="py-3 px-4">
+                        <button onclick="deleteVocabulary('${item.id}')" class="text-red-500 hover:text-red-400">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        function deleteVocabulary(id) {
+            if (confirm('确定要删除这个词汇吗？')) {
+                vocabulary = vocabulary.filter(item => item.id !== id);
+                localStorage.setItem('vocabulary', JSON.stringify(vocabulary));
+                updateVocabularyTable();
+                updateDashboard();
+            }
+        }
+
+        function searchVocabulary() {
+            const searchTerm = document.getElementById('vocabularySearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#vocabularyTableBody tr');
+            
+            rows.forEach(row => {
+                const word = row.cells[0].textContent.toLowerCase();
+                if (word.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // 联系人管理
+        function showAddContactModal() {
+            document.getElementById('newContactName').value = '';
+            document.getElementById('newContactNote').value = '';
+            document.getElementById('addContactModal').classList.remove('hidden');
+            document.getElementById('addContactModal').classList.add('flex');
+        }
+
+        function addContact() {
+            const name = document.getElementById('newContactName').value.trim();
+            const note = document.getElementById('newContactNote').value.trim();
+            
+            if (!name) {
+                alert('请输入联系人名称');
+                return;
+            }
+            
+            // 检查联系人是否已存在
+            const existingContact = contacts.find(item => item.name.toLowerCase() === name.toLowerCase());
+            if (existingContact) {
+                alert('联系人已存在');
+                return;
+            }
+            
+            // 添加到联系人列表
+            contacts.push({
+                id: Date.now().toString(),
+                name: name,
+                note: note
+            });
+            
+            // 保存到本地存储
+            localStorage.setItem('contacts', JSON.stringify(contacts));
+            
+            // 更新UI
+            updateContactsList();
+            updateChatContactSelect();
+            updateDashboard();
+            closeModal('addContactModal');
+        }
+
+        function updateContactsList() {
+            const contactsList = document.getElementById('contactsList');
+            const emptyMessage = document.getElementById('contactsEmptyMessage');
+            
+            contactsList.innerHTML = '';
+            
+            if (contacts.length === 0) {
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+            
+            emptyMessage.classList.add('hidden');
+            
+            contacts.forEach(contact => {
+                const card = document.createElement('div');
+                card.className = 'card rounded-xl p-5 hover:shadow-lg transition';
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="text-lg font-semibold">${contact.name}</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="selectContactById('${contact.id}')" class="text-blue-500 hover:text-blue-400">
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button onclick="deleteContact('${contact.id}')" class="text-red-500 hover:text-red-400">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">${contact.note || '无备注'}</p>
+                    <div class="mt-4 text-xs text-gray-500">
+                        ID: ${contact.id}
+                    </div>
+                `;
+                
+                contactsList.appendChild(card);
+            });
+        }
+
+        function deleteContact(id) {
+            if (confirm('确定要删除这个联系人吗？')) {
+                contacts = contacts.filter(item => item.id !== id);
+                localStorage.setItem('contacts', JSON.stringify(contacts));
+                
+                // 如果删除的是当前联系人，清除当前联系人
+                if (currentContactId === id) {
+                    currentContactId = '';
+                    localStorage.setItem('currentContactId', '');
+                    updateCurrentContactStatus();
+                }
+                
+                updateContactsList();
+                updateChatContactSelect();
+                updateDashboard();
+            }
+        }
+
+        function selectContactById(id) {
+            currentContactId = id;
+            localStorage.setItem('currentContactId', id);
+            updateCurrentContactStatus();
+            
+            // 显示通讯中心
+            showView('communication');
+        }
+
+        function showContactSelectionModal() {
+            const select = document.getElementById('contactSelect');
+            select.innerHTML = '<option value="">选择联系人</option>';
+            
+            contacts.forEach(contact => {
+                const option = document.createElement('option');
+                option.value = contact.id;
+                option.textContent = contact.name;
+                if (contact.id === currentContactId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            document.getElementById('contactSelectionModal').classList.remove('hidden');
+            document.getElementById('contactSelectionModal').classList.add('flex');
+        }
+
+        function selectContact() {
+            const contactId = document.getElementById('contactSelect').value;
+            if (contactId) {
+                currentContactId = contactId;
+                localStorage.setItem('currentContactId', contactId);
+                updateCurrentContactStatus();
+            }
+            closeModal('contactSelectionModal');
+        }
+
+        function updateCurrentContactStatus() {
+            const statusElement = document.getElementById('currentContactStatus');
+            const nameElement = document.getElementById('currentContactName');
+            
+            if (currentContactId) {
+                const contact = contacts.find(item => item.id === currentContactId);
+                if (contact) {
+                    statusElement.textContent = contact.name;
+                    nameElement.textContent = contact.name;
+                } else {
+                    statusElement.textContent = '未选择';
+                    nameElement.textContent = '未选择';
+                    currentContactId = '';
+                    localStorage.setItem('currentContactId', '');
+                }
+            } else {
+                statusElement.textContent = '未选择';
+                nameElement.textContent = '未选择';
+            }
+        }
+
+        // 通讯中心
+        function sendMessage() {
+            if (!currentContactId) {
+                alert('请先选择联系人');
+                return;
+            }
+            
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            const errorDiv = document.getElementById('messageError');
+            const errorText = document.getElementById('messageErrorText');
+            
+            if (!message) {
+                errorText.textContent = '请输入消息';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            // 检查消息中是否包含空格
+            if (!message.includes(' ')) {
+                errorText.textContent = '请用空格分隔词汇，例如："你好 外星朋友"';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            // 分割词汇
+            const words = message.split(/\s+/);
+            const missingWords = [];
+            
+            // 检查每个词汇是否在词汇表中
+            for (const word of words) {
+                const found = vocabulary.find(item => item.word.toLowerCase() === word.toLowerCase());
+                if (!found) {
+                    missingWords.push(word);
+                }
+            }
+            
+            // 如果有缺失的词汇，显示错误
+            if (missingWords.length > 0) {
+                errorText.textContent = `以下词汇不在词汇表中：${missingWords.join(', ')}。请先添加这些词汇到词汇表。`;
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            // 隐藏错误信息
+            errorDiv.classList.add('hidden');
+            
+            // 生成符号序列
+            let symbolSequence = '';
+            for (const word of words) {
+                const vocabItem = vocabulary.find(item => item.word.toLowerCase() === word.toLowerCase());
+                if (vocabItem) {
+                    symbolSequence += vocabItem.symbol + ' ';
+                }
+            }
+            symbolSequence = symbolSequence.trim();
+            
+            // 保存到聊天记录
+            saveChatMessage('sent', message, symbolSequence);
+            
+            // 显示加密结果
+            document.getElementById('encryptedMessage').textContent = symbolSequence;
+            document.getElementById('encryptedResult').classList.remove('hidden');
+            
+            // 清空输入框
+            messageInput.value = '';
+        }
+
+        function receiveMessage() {
+            if (!currentContactId) {
+                alert('请先选择联系人');
+                return;
+            }
+            
+            const symbolInput = document.getElementById('symbolInput');
+            const symbolSequence = symbolInput.value.trim();
+            
+            if (!symbolSequence) {
+                alert('请输入符号序列');
+                return;
+            }
+            
+            // 解密消息
+            let decryptedMessage = '';
+            const symbolGroups = symbolSequence.split(/\s+/);
+            
+            for (const group of symbolGroups) {
+                // 检查是否在词汇表中
+                const vocabItem = vocabulary.find(item => item.symbol === group);
+                if (vocabItem) {
+                    decryptedMessage += vocabItem.word + ' ';
+                } else {
+                    // 检查是否在破解笔记中
+                    const noteItem = notes.find(item => item.symbol === group);
+                    if (noteItem) {
+                        decryptedMessage += noteItem.meaning + ' ';
+                    } else {
+                        decryptedMessage += '??? ';
+                    }
+                }
+            }
+            
+            decryptedMessage = decryptedMessage.trim();
+            
+            // 保存到聊天记录
+            saveChatMessage('received', symbolSequence, decryptedMessage);
+            
+            // 显示解密结果
+            document.getElementById('decryptedMessage').textContent = decryptedMessage;
+            document.getElementById('decryptedResult').classList.remove('hidden');
+            
+            // 清空输入框
+            symbolInput.value = '';
+        }
+
+        function saveChatMessage(type, content, result) {
+            if (!currentContactId) return;
+            
+            // 查找或创建联系人的聊天记录
+            let contactChat = chatHistory.find(item => item.contactId === currentContactId);
+            if (!contactChat) {
+                contactChat = {
+                    contactId: currentContactId,
+                    messages: []
+                };
+                chatHistory.push(contactChat);
+            }
+            
+            // 添加消息
+            contactChat.messages.push({
+                id: Date.now().toString(),
+                type: type,
+                content: content,
+                result: result,
+                timestamp: new Date().toISOString()
+            });
+            
+            // 保存到本地存储
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        }
+
+        // 聊天记录
+        function updateChatContactSelect() {
+            const select = document.getElementById('chatContactSelect');
+            select.innerHTML = '<option value="">选择联系人</option>';
+            
+            contacts.forEach(contact => {
+                const option = document.createElement('option');
+                option.value = contact.id;
+                option.textContent = contact.name;
+                select.appendChild(option);
+            });
+        }
+
+        function loadChatHistory() {
+            const contactId = document.getElementById('chatContactSelect').value;
+            const chatHistoryDiv = document.getElementById('chatHistory');
+            const emptyMessage = document.getElementById('chatEmptyMessage');
+            
+            chatHistoryDiv.innerHTML = '';
+            
+            if (!contactId) {
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+            
+            const contactChat = chatHistory.find(item => item.contactId === contactId);
+            if (!contactChat || contactChat.messages.length === 0) {
+                emptyMessage.classList.remove('hidden');
+                emptyMessage.innerHTML = `
+                    <i class="fas fa-comments text-4xl mb-3"></i>
+                    <p>与该联系人的聊天记录为空</p>
+                `;
+                return;
+            }
+            
+            emptyMessage.classList.add('hidden');
+            
+            const contact = contacts.find(item => item.id === contactId);
+            
+            contactChat.messages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${message.type === 'sent' ? 'text-right' : 'text-left'}`;
+                
+                const date = new Date(message.timestamp);
+                const timeString = date.toLocaleTimeString();
+                
+                if (message.type === 'sent') {
+                    messageDiv.innerHTML = `
+                        <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-blue-600 text-white">
+                            <div class="font-medium">${message.content}</div>
+                            <div class="text-xs opacity-70 mt-1">${message.result}</div>
+                            <div class="text-xs opacity-50 mt-1">${timeString}</div>
+                        </div>
+                    `;
+                } else {
+                    messageDiv.innerHTML = `
+                        <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-700 text-white">
+                            <div class="font-medium">${message.content}</div>
+                            <div class="text-xs opacity-70 mt-1">${message.result}</div>
+                            <div class="text-xs opacity-50 mt-1">${timeString}</div>
+                        </div>
+                    `;
+                }
+                
+                chatHistoryDiv.appendChild(messageDiv);
+            });
+            
+            // 滚动到底部
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+        }
+
+        // 破解笔记
+        function showAddNoteModal() {
+            document.getElementById('newNoteSymbol').value = '';
+            document.getElementById('newNoteMeaning').value = '';
+            document.getElementById('newNoteNote').value = '';
+            document.getElementById('addNoteModal').classList.remove('hidden');
+            document.getElementById('addNoteModal').classList.add('flex');
+        }
+
+        function addNote() {
+            const symbol = document.getElementById('newNoteSymbol').value.trim();
+            const meaning = document.getElementById('newNoteMeaning').value.trim();
+            const note = document.getElementById('newNoteNote').value.trim();
+            
+            if (!symbol || !meaning) {
+                alert('请输入符号序列和含义');
+                return;
+            }
+            
+            // 添加到笔记列表
+            notes.push({
+                id: Date.now().toString(),
+                symbol: symbol,
+                meaning: meaning,
+                note: note
+            });
+            
+            // 保存到本地存储
+            localStorage.setItem('notes', JSON.stringify(notes));
+            
+            // 更新UI
+            updateNotesList();
+            closeModal('addNoteModal');
+        }
+
+        function updateNotesList() {
+            const notesList = document.getElementById('notesList');
+            const emptyMessage = document.getElementById('notesEmptyMessage');
+            
+            notesList.innerHTML = '';
+            
+            if (notes.length === 0) {
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+            
+            emptyMessage.classList.add('hidden');
+            
+            notes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'card rounded-xl p-5 hover:shadow-lg transition';
+                
+                // 创建符号预览
+                let symbolPreview = '';
+                const symbolParts = note.symbol.split(' ');
+                symbolParts.forEach(part => {
+                    symbolPreview += `<div class="symbol-preview">${part}</div>`;
+                });
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="text-lg font-semibold">${note.meaning}</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="showEditNoteModal('${note.id}')" class="text-blue-500 hover:text-blue-400">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteNote('${note.id}')" class="text-red-500 hover:text-red-400">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="flex items-center">
+                            ${symbolPreview}
+                            <span class="ml-2 text-sm">${note.symbol}</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">${note.note || '无备注'}</p>
+                `;
+                
+                notesList.appendChild(card);
+            });
+        }
+
+        function showEditNoteModal(id) {
+            const note = notes.find(item => item.id === id);
+            if (!note) return;
+            
+            editingNoteId = id;
+            document.getElementById('editNoteSymbol').value = note.symbol;
+            document.getElementById('editNoteMeaning').value = note.meaning;
+            document.getElementById('editNoteNote').value = note.note;
+            document.getElementById('editNoteModal').classList.remove('hidden');
+            document.getElementById('editNoteModal').classList.add('flex');
+        }
+
+        function updateNote() {
+            const symbol = document.getElementById('editNoteSymbol').value.trim();
+            const meaning = document.getElementById('editNoteMeaning').value.trim();
+            const note = document.getElementById('editNoteNote').value.trim();
+            
+            if (!symbol || !meaning) {
+                alert('请输入符号序列和含义');
+                return;
+            }
+            
+            // 更新笔记
+            const noteIndex = notes.findIndex(item => item.id === editingNoteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex] = {
+                    id: editingNoteId,
+                    symbol: symbol,
+                    meaning: meaning,
+                    note: note
+                };
+                
+                // 保存到本地存储
+                localStorage.setItem('notes', JSON.stringify(notes));
+                
+                // 更新UI
+                updateNotesList();
+                closeModal('editNoteModal');
+            }
+        }
+
+        function deleteNote(id) {
+            if (confirm('确定要删除这个笔记吗？')) {
+                notes = notes.filter(item => item.id !== id);
+                localStorage.setItem('notes', JSON.stringify(notes));
+                updateNotesList();
+            }
+        }
+
+        function searchNotes() {
+            const searchTerm = document.getElementById('notesSearch').value.toLowerCase();
+            const cards = document.querySelectorAll('#notesList > div');
+            
+            cards.forEach(card => {
+                const meaning = card.querySelector('h3').textContent.toLowerCase();
+                const symbol = card.querySelector('.flex.items-center span').textContent.toLowerCase();
+                const note = card.querySelector('p.text-gray-400').textContent.toLowerCase();
+                
+                if (meaning.includes(searchTerm) || symbol.includes(searchTerm) || note.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // 工具函数
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.getElementById(modalId).classList.remove('flex');
+        }
+
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    alert('已复制到剪贴板');
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                });
+        }
+    </script>
+</body>
+</html>
